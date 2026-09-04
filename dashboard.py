@@ -4,6 +4,7 @@ from tkinter import *
 from PIL import Image, ImageTk
 from employees import employee_form
 from suppliers import supplier_form
+from category import category_form
 #Functionality part
 
 
@@ -110,7 +111,8 @@ category_button = Button(
     text=' Category',
     font=('times new roman', 20, 'bold'),
     anchor='w',
-    padx=10
+    padx=10,
+    command=lambda:category_form(window)
 )
 category_button.pack(fill=X)
 

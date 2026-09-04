@@ -857,7 +857,7 @@ def supplier_form(window):
 
     invoice_label = Label(
         left_frame,
-        text="Invoice No.",
+        text="Invoice No",
         font=("times new roman", 14),
         bg="white"
     )
