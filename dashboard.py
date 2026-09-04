@@ -1,11 +1,9 @@
 from tkinter import *
-from tkinter import ttk
 
-from tkcalendar import DateEntry
 
 from PIL import Image, ImageTk
 from employees import employee_form
-
+from suppliers import supplier_form
 #Functionality part
 
 
@@ -36,6 +34,10 @@ bg_Image = ImageTk.PhotoImage(image)
 #adding label
 titleLabel = Label(window,image = bg_Image,compound=LEFT, text='  Inventory management system',font=('times new roman',40,'bold'),bg="#010c48",fg='white',anchor='w',padx=20)
 titleLabel.place(x=0,y=0,relwidth=1)
+
+
+
+
 
 
 
@@ -91,7 +93,8 @@ supplier_button = Button(
     text=' Supplier',
     font=('times new roman', 20, 'bold'),
     anchor='w',
-    padx=10
+    padx=10,
+    command=lambda :supplier_form(window)
 )
 supplier_button.pack(fill=X)
 
