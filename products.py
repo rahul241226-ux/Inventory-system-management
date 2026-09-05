@@ -1,23 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 from tkinter import *
 from tkinter import ttk, messagebox
 import pymysql
@@ -26,7 +7,6 @@ import pymysql
 # ============================================================
 # DATABASE SETTINGS
 # ============================================================
-
 DB_HOST = "localhost"
 DB_USER = "root"
 DB_PASSWORD = "Sswashank@12345"
@@ -45,15 +25,53 @@ def connect_database():
             password="Sswashank@12345",
             database="inventory_system"
         )
-
-        return connection
+        cursor = connection.cursor()
+        return cursor, connection
 
     except pymysql.MySQLError as e:
         messagebox.showerror(
             "Database Error",
             f"Unable to connect to database:\n{e}"
         )
-        return None
+        return None, None
+
+
+# ============================================================
+# CREATE PRODUCT TABLE
+# ============================================================
+
+def create_product_table():
+    cursor, connection = connect_database()
+
+    if cursor is None:
+        return
+
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS product_data (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                category VARCHAR(100) NOT NULL,
+                supplier VARCHAR(100) NOT NULL,
+                name VARCHAR(150) NOT NULL,
+                price DECIMAL(10,2) NOT NULL,
+                discount DECIMAL(5,2) NOT NULL DEFAULT 0,
+                discounted_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+                quantity INT NOT NULL,
+                status VARCHAR(20) NOT NULL
+            )
+        """)
+
+        connection.commit()
+
+    except pymysql.MySQLError as e:
+        messagebox.showerror(
+            "Database Error",
+            f"Unable to create product table:\n{e}"
+        )
+
+    finally:
+        cursor.close()
+        connection.close()
 
 
 # ============================================================
@@ -62,9 +80,9 @@ def connect_database():
 
 def product_form(window):
 
-    # ========================================================
+    # --------------------------------------------------------
     # MAIN FRAME
-    # ========================================================
+    # --------------------------------------------------------
 
     product_frame = Frame(
         window,
@@ -73,17 +91,13 @@ def product_form(window):
         bg="white"
     )
 
-    product_frame.place(
-        x=200,
-        y=100
-    )
+    product_frame.place(x=200, y=100)
 
+    # --------------------------------------------------------
+    # HEADING
+    # --------------------------------------------------------
 
-    # ========================================================
-    # TITLE
-    # ========================================================
-
-    title_label = Label(
+    heading_label = Label(
         product_frame,
         text="Manage Product Details",
         font=("times new roman", 16, "bold"),
@@ -91,12 +105,13 @@ def product_form(window):
         fg="white"
     )
 
-    title_label.place(
-        x=0,
-        y=0,
-        relwidth=1
-    )
+    heading_label.place(x=0, y=0, relwidth=1)
 
+    # ========================================================
+    # VARIABLES
+    # ========================================================
+
+    selected_product_id = StringVar()
 
     # ========================================================
     # CATEGORY
@@ -110,11 +125,7 @@ def product_form(window):
         fg="black"
     )
 
-    category_label.place(
-        x=20,
-        y=60
-    )
-
+    category_label.place(x=20, y=55)
 
     category_combobox = ttk.Combobox(
         product_frame,
@@ -123,13 +134,9 @@ def product_form(window):
         state="readonly"
     )
 
-    category_combobox.place(
-        x=20,
-        y=90
-    )
+    category_combobox.place(x=20, y=90)
 
     category_combobox.set("Empty")
-
 
     # ========================================================
     # SUPPLIER
@@ -143,11 +150,7 @@ def product_form(window):
         fg="black"
     )
 
-    supplier_label.place(
-        x=260,
-        y=60
-    )
-
+    supplier_label.place(x=260, y=55)
 
     supplier_combobox = ttk.Combobox(
         product_frame,
@@ -156,13 +159,9 @@ def product_form(window):
         state="readonly"
     )
 
-    supplier_combobox.place(
-        x=260,
-        y=90
-    )
+    supplier_combobox.place(x=260, y=90)
 
     supplier_combobox.set("Empty")
-
 
     # ========================================================
     # PRODUCT NAME
@@ -176,24 +175,15 @@ def product_form(window):
         fg="black"
     )
 
-    name_label.place(
-        x=20,
-        y=145
-    )
-
+    name_label.place(x=20, y=140)
 
     name_entry = Entry(
         product_frame,
         font=("times new roman", 14),
-        bg="lightyellow",
-        width=20
+        bg="lightyellow"
     )
 
-    name_entry.place(
-        x=20,
-        y=175
-    )
-
+    name_entry.place(x=20, y=175, width=210)
 
     # ========================================================
     # PRICE
@@ -207,24 +197,15 @@ def product_form(window):
         fg="black"
     )
 
-    price_label.place(
-        x=260,
-        y=145
-    )
-
+    price_label.place(x=260, y=140)
 
     price_entry = Entry(
         product_frame,
         font=("times new roman", 14),
-        bg="lightyellow",
-        width=20
+        bg="lightyellow"
     )
 
-    price_entry.place(
-        x=260,
-        y=175
-    )
-
+    price_entry.place(x=260, y=175, width=210)
 
     # ========================================================
     # QUANTITY
@@ -238,24 +219,42 @@ def product_form(window):
         fg="black"
     )
 
-    quantity_label.place(
-        x=20,
-        y=230
-    )
-
+    quantity_label.place(x=20, y=225)
 
     quantity_entry = Entry(
         product_frame,
         font=("times new roman", 14),
-        bg="lightyellow",
-        width=20
+        bg="lightyellow"
     )
 
-    quantity_entry.place(
-        x=20,
-        y=260
+    quantity_entry.place(x=20, y=260, width=210)
+
+    # ========================================================
+    # DISCOUNT
+    # ========================================================
+
+    discount_label = Label(
+        product_frame,
+        text="Discount (%)",
+        font=("times new roman", 14, "bold"),
+        bg="white",
+        fg="black"
     )
 
+    discount_label.place(x=260, y=225)
+
+    discount_spinbox = Spinbox(
+        product_frame,
+        from_=0,
+        to=100,
+        font=("times new roman", 14),
+        bg="lightyellow"
+    )
+
+    discount_spinbox.place(x=260, y=260, width=210)
+
+    discount_spinbox.delete(0, END)
+    discount_spinbox.insert(0, "0")
 
     # ========================================================
     # STATUS
@@ -269,95 +268,19 @@ def product_form(window):
         fg="black"
     )
 
-    status_label.place(
-        x=260,
-        y=230
-    )
-
+    status_label.place(x=20, y=310)
 
     status_combobox = ttk.Combobox(
         product_frame,
-        values=(
-            "Active",
-            "Inactive"
-        ),
+        values=("Active", "Inactive"),
         font=("times new roman", 14),
         width=18,
         state="readonly"
     )
 
-    status_combobox.place(
-        x=260,
-        y=260
-    )
+    status_combobox.place(x=20, y=345)
 
-    status_combobox.set("Select Status")
-
-
-    # ========================================================
-    # BUTTON FRAME
-    # ========================================================
-
-    button_frame = Frame(
-        product_frame,
-        bg="white"
-    )
-
-    button_frame.place(
-        x=20,
-        y=320
-    )
-
-
-    # ========================================================
-    # CLEAR FIELDS
-    # ========================================================
-
-    def clear_fields():
-
-        if category_combobox["values"]:
-            category_combobox.set(
-                category_combobox["values"][0]
-            )
-        else:
-            category_combobox.set("Empty")
-
-
-        if supplier_combobox["values"]:
-            supplier_combobox.set(
-                supplier_combobox["values"][0]
-            )
-        else:
-            supplier_combobox.set("Empty")
-
-
-        name_entry.delete(
-            0,
-            END
-        )
-
-        price_entry.delete(
-            0,
-            END
-        )
-
-        quantity_entry.delete(
-            0,
-            END
-        )
-
-        status_combobox.set(
-            "Select Status"
-        )
-
-        search_entry.delete(
-            0,
-            END
-        )
-
-        for item in treeview.selection():
-            treeview.selection_remove(item)
-
+    status_combobox.set("Active")
 
     # ========================================================
     # LOAD CATEGORIES
@@ -365,62 +288,38 @@ def product_form(window):
 
     def load_categories():
 
-        con = None
-        cursor = None
+        cursor, connection = connect_database()
+
+        if cursor is None:
+            return
 
         try:
-
-            con = connect_database()
-
-            if con is None:
-                return
-
-            cursor = con.cursor()
-
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT category_name
                 FROM category_data
                 ORDER BY category_name
-                """
-            )
+            """)
 
             categories = cursor.fetchall()
 
-            category_values = [
-                row[0]
-                for row in categories
+            category_combobox["values"] = [
+                row[0] for row in categories
             ]
 
-            category_combobox["values"] = category_values
-
-            if category_values:
-
-                category_combobox.set(
-                    category_values[0]
-                )
-
+            if categories:
+                category_combobox.set(categories[0][0])
             else:
-
-                category_combobox.set(
-                    "Empty"
-                )
+                category_combobox.set("Empty")
 
         except pymysql.MySQLError as e:
-
             messagebox.showerror(
                 "Database Error",
                 f"Unable to load categories:\n{e}"
             )
 
         finally:
-
-            if cursor:
-                cursor.close()
-
-            if con:
-                con.close()
-
+            cursor.close()
+            connection.close()
 
     # ========================================================
     # LOAD SUPPLIERS
@@ -428,65 +327,41 @@ def product_form(window):
 
     def load_suppliers():
 
-        con = None
-        cursor = None
+        cursor, connection = connect_database()
+
+        if cursor is None:
+            return
 
         try:
-
-            con = connect_database()
-
-            if con is None:
-                return
-
-            cursor = con.cursor()
-
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT supplier_name
                 FROM supplier_data
                 ORDER BY supplier_name
-                """
-            )
+            """)
 
             suppliers = cursor.fetchall()
 
-            supplier_values = [
-                row[0]
-                for row in suppliers
+            supplier_combobox["values"] = [
+                row[0] for row in suppliers
             ]
 
-            supplier_combobox["values"] = supplier_values
-
-            if supplier_values:
-
-                supplier_combobox.set(
-                    supplier_values[0]
-                )
-
+            if suppliers:
+                supplier_combobox.set(suppliers[0][0])
             else:
-
-                supplier_combobox.set(
-                    "Empty"
-                )
+                supplier_combobox.set("Empty")
 
         except pymysql.MySQLError as e:
-
             messagebox.showerror(
                 "Database Error",
                 f"Unable to load suppliers:\n{e}"
             )
 
         finally:
-
-            if cursor:
-                cursor.close()
-
-            if con:
-                con.close()
-
+            cursor.close()
+            connection.close()
 
     # ========================================================
-    # VALIDATE PRODUCT
+    # GET PRODUCT DATA
     # ========================================================
 
     def get_product_data():
@@ -495,147 +370,116 @@ def product_form(window):
         supplier = supplier_combobox.get().strip()
         name = name_entry.get().strip()
         price = price_entry.get().strip()
+        discount = discount_spinbox.get().strip()
         quantity = quantity_entry.get().strip()
         status = status_combobox.get().strip()
 
+        # ----------------------------------------------------
+        # VALIDATION
+        # ----------------------------------------------------
 
-        # Category
-
-        if not category or category == "Empty":
-
+        if category == "" or category == "Empty":
             messagebox.showerror(
                 "Error",
-                "Please select category"
+                "Please select a category"
             )
-
             return None
 
-
-        # Supplier
-
-        if not supplier or supplier == "Empty":
-
+        if supplier == "" or supplier == "Empty":
             messagebox.showerror(
                 "Error",
-                "Please select supplier"
+                "Please select a supplier"
             )
-
             return None
 
-
-        # Product Name
-
-        if not name:
-
+        if name == "":
             messagebox.showerror(
                 "Error",
                 "Please enter product name"
             )
-
             return None
 
-
-        # Price
-
-        if not price:
-
+        if price == "":
             messagebox.showerror(
                 "Error",
                 "Please enter price"
             )
-
             return None
 
-
-        # Quantity
-
-        if not quantity:
-
+        if quantity == "":
             messagebox.showerror(
                 "Error",
                 "Please enter quantity"
             )
-
             return None
 
-
-        # Status
-
-        if not status or status == "Select Status":
-
-            messagebox.showerror(
-                "Error",
-                "Please select status"
-            )
-
-            return None
-
-
-        # Price validation
+        # ----------------------------------------------------
+        # PRICE VALIDATION
+        # ----------------------------------------------------
 
         try:
-
             price = float(price)
 
-        except ValueError:
+            if price < 0:
+                raise ValueError
 
+        except ValueError:
             messagebox.showerror(
                 "Error",
-                "Price must be a number"
+                "Price must be a valid positive number"
             )
-
             return None
 
-
-        # Quantity validation
+        # ----------------------------------------------------
+        # DISCOUNT VALIDATION
+        # ----------------------------------------------------
 
         try:
+            discount = float(discount)
 
-            quantity = int(quantity)
+            if discount < 0 or discount > 100:
+                raise ValueError
 
         except ValueError:
-
             messagebox.showerror(
                 "Error",
-                "Quantity must be an integer"
+                "Discount must be between 0 and 100"
             )
-
             return None
 
+        # ----------------------------------------------------
+        # QUANTITY VALIDATION
+        # ----------------------------------------------------
 
-        # Negative price
+        try:
+            quantity = int(quantity)
 
-        if price < 0:
+            if quantity < 0:
+                raise ValueError
 
+        except ValueError:
             messagebox.showerror(
                 "Error",
-                "Price cannot be negative"
+                "Quantity must be a valid positive integer"
             )
-
             return None
 
+        # ----------------------------------------------------
+        # CALCULATE DISCOUNTED PRICE
+        # ----------------------------------------------------
 
-        # Negative quantity
-
-        if quantity < 0:
-
-            messagebox.showerror(
-                "Error",
-                "Quantity cannot be negative"
-            )
-
-            return None
-
+        discounted_price = round(price * (1 - discount / 100),2)
 
         return (
             category,
             supplier,
             name,
             price,
+            discount,
+            discounted_price,
             quantity,
             status
         )
-
 
     # ========================================================
     # ADD PRODUCT
@@ -648,23 +492,27 @@ def product_form(window):
         if data is None:
             return
 
+        (
+            category,
+            supplier,
+            name,
+            price,
+            discount,
+            discounted_price,
+            quantity,
+            status
+        ) = data
 
-        category, supplier, name, price, quantity, status = data
+        cursor, connection = connect_database()
 
-        con = None
-        cursor = None
+        if cursor is None:
+            return
 
         try:
 
-            con = connect_database()
-
-            if con is None:
-                return
-
-            cursor = con.cursor()
-
-
-            # Check duplicate product
+            # ------------------------------------------------
+            # CHECK DUPLICATE PRODUCT
+            # ------------------------------------------------
 
             cursor.execute(
                 """
@@ -684,8 +532,9 @@ def product_form(window):
 
                 return
 
-
-            # Insert product
+            # ------------------------------------------------
+            # INSERT PRODUCT
+            # ------------------------------------------------
 
             cursor.execute(
                 """
@@ -695,40 +544,39 @@ def product_form(window):
                     supplier,
                     name,
                     price,
+                    discount,
+                    discounted_price,
                     quantity,
                     status
                 )
                 VALUES
-                (%s,%s,%s,%s,%s,%s)
+                (%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
                     category,
                     supplier,
                     name,
                     price,
+                    discount,
+                    discounted_price,
                     quantity,
                     status
                 )
             )
 
-
-            con.commit()
-
+            connection.commit()
 
             messagebox.showinfo(
                 "Success",
                 "Product added successfully"
             )
 
-
-            clear_fields()
             show_all_products()
-
+            clear_fields()
 
         except pymysql.MySQLError as e:
 
-            if con:
-                con.rollback()
+            connection.rollback()
 
             messagebox.showerror(
                 "Database Error",
@@ -737,12 +585,8 @@ def product_form(window):
 
         finally:
 
-            if cursor:
-                cursor.close()
-
-            if con:
-                con.close()
-
+            cursor.close()
+            connection.close()
 
     # ========================================================
     # UPDATE PRODUCT
@@ -750,79 +594,39 @@ def product_form(window):
 
     def update_product():
 
-        selected = treeview.selection()
-
-        if not selected:
+        if selected_product_id.get() == "":
 
             messagebox.showerror(
                 "Error",
-                "Please select a product from the table"
+                "Please select a product first"
             )
 
             return
-
-
-        values = treeview.item(
-            selected[0],
-            "values"
-        )
-
-        if not values:
-            return
-
-
-        product_id = values[0]
-
 
         data = get_product_data()
 
         if data is None:
             return
 
+        (
+            category,
+            supplier,
+            name,
+            price,
+            discount,
+            discounted_price,
+            quantity,
+            status
+        ) = data
 
-        category, supplier, name, price, quantity, status = data
+        product_id = selected_product_id.get()
 
+        cursor, connection = connect_database()
 
-        con = None
-        cursor = None
+        if cursor is None:
+            return
 
         try:
-
-            con = connect_database()
-
-            if con is None:
-                return
-
-            cursor = con.cursor()
-
-
-            # Check duplicate product name
-
-            cursor.execute(
-                """
-                SELECT id
-                FROM product_data
-                WHERE name=%s
-                AND id!=%s
-                """,
-                (
-                    name,
-                    product_id
-                )
-            )
-
-
-            if cursor.fetchone():
-
-                messagebox.showerror(
-                    "Error",
-                    "Another product with this name already exists"
-                )
-
-                return
-
-
-            # Update
 
             cursor.execute(
                 """
@@ -832,6 +636,8 @@ def product_form(window):
                     supplier=%s,
                     name=%s,
                     price=%s,
+                    discount=%s,
+                    discounted_price=%s,
                     quantity=%s,
                     status=%s
                 WHERE id=%s
@@ -841,30 +647,27 @@ def product_form(window):
                     supplier,
                     name,
                     price,
+                    discount,
+                    discounted_price,
                     quantity,
                     status,
                     product_id
                 )
             )
 
-
-            con.commit()
-
+            connection.commit()
 
             messagebox.showinfo(
                 "Success",
                 "Product updated successfully"
             )
 
-
-            clear_fields()
             show_all_products()
-
+            clear_fields()
 
         except pymysql.MySQLError as e:
 
-            if con:
-                con.rollback()
+            connection.rollback()
 
             messagebox.showerror(
                 "Database Error",
@@ -873,12 +676,8 @@ def product_form(window):
 
         finally:
 
-            if cursor:
-                cursor.close()
-
-            if con:
-                con.close()
-
+            cursor.close()
+            connection.close()
 
     # ========================================================
     # DELETE PRODUCT
@@ -886,80 +685,51 @@ def product_form(window):
 
     def delete_product():
 
-        selected = treeview.selection()
-
-        if not selected:
+        if selected_product_id.get() == "":
 
             messagebox.showerror(
                 "Error",
-                "Please select a product"
+                "Please select a product first"
             )
 
             return
 
-
-        values = treeview.item(
-            selected[0],
-            "values"
-        )
-
-        if not values:
-            return
-
-
-        product_id = values[0]
-        product_name = values[3]
-
-
-        confirm = messagebox.askyesno(
+        answer = messagebox.askyesno(
             "Confirm Delete",
-            f"Are you sure you want to delete '{product_name}'?"
+            "Are you sure you want to delete this product?"
         )
 
-
-        if not confirm:
+        if not answer:
             return
 
+        cursor, connection = connect_database()
 
-        con = None
-        cursor = None
+        if cursor is None:
+            return
 
         try:
-
-            con = connect_database()
-
-            if con is None:
-                return
-
-            cursor = con.cursor()
-
 
             cursor.execute(
                 """
                 DELETE FROM product_data
                 WHERE id=%s
                 """,
-                (product_id,)
+                (selected_product_id.get(),)
             )
 
-
-            con.commit()
-
+            connection.commit()
 
             messagebox.showinfo(
                 "Success",
                 "Product deleted successfully"
             )
 
-
-            clear_fields()
             show_all_products()
-
+            clear_fields()
 
         except pymysql.MySQLError as e:
 
-            if con:
-                con.rollback()
+            connection.rollback()
 
             messagebox.showerror(
                 "Database Error",
@@ -968,12 +738,35 @@ def product_form(window):
 
         finally:
 
-            if cursor:
-                cursor.close()
+            cursor.close()
+            connection.close()
 
-            if con:
-                con.close()
+    # ========================================================
+    # CLEAR FIELDS
+    # ========================================================
 
+    def clear_fields():
+
+        selected_product_id.set("")
+
+        category_combobox.set("Empty")
+
+        supplier_combobox.set("Empty")
+
+        name_entry.delete(0, END)
+
+        price_entry.delete(0, END)
+
+        quantity_entry.delete(0, END)
+
+        discount_spinbox.delete(0, END)
+        discount_spinbox.insert(0, "0")
+
+        status_combobox.set("Active")
+
+        # Remove Treeview selection
+        for item in product_treeview.selection():
+            product_treeview.selection_remove(item)
 
     # ========================================================
     # SELECT PRODUCT FROM TREEVIEW
@@ -981,13 +774,12 @@ def product_form(window):
 
     def select_product(event):
 
-        selected = treeview.selection()
+        selected = product_treeview.selection()
 
         if not selected:
             return
 
-
-        values = treeview.item(
+        values = product_treeview.item(
             selected[0],
             "values"
         )
@@ -995,55 +787,38 @@ def product_form(window):
         if not values:
             return
 
+        # ----------------------------------------------------
+        # TREEVIEW ORDER
+        # 0 = ID
+        # 1 = Category
+        # 2 = Supplier
+        # 3 = Name
+        # 4 = Price
+        # 5 = Discount
+        # 6 = Discounted Price
+        # 7 = Quantity
+        # 8 = Status
+        # ----------------------------------------------------
 
-        # ID = values[0]
+        selected_product_id.set(values[0])
 
-        category_combobox.set(
-            values[1]
-        )
+        category_combobox.set(values[1])
 
-        supplier_combobox.set(
-            values[2]
-        )
+        supplier_combobox.set(values[2])
 
+        name_entry.delete(0, END)
+        name_entry.insert(0, values[3])
 
-        name_entry.delete(
-            0,
-            END
-        )
+        price_entry.delete(0, END)
+        price_entry.insert(0, values[4])
 
-        name_entry.insert(
-            0,
-            values[3]
-        )
+        discount_spinbox.delete(0, END)
+        discount_spinbox.insert(0, values[5])
 
+        quantity_entry.delete(0, END)
+        quantity_entry.insert(0, values[7])
 
-        price_entry.delete(
-            0,
-            END
-        )
-
-        price_entry.insert(
-            0,
-            values[4]
-        )
-
-
-        quantity_entry.delete(
-            0,
-            END
-        )
-
-        quantity_entry.insert(
-            0,
-            values[5]
-        )
-
-
-        status_combobox.set(
-            values[6]
-        )
-
+        status_combobox.set(values[8])
 
     # ========================================================
     # SHOW ALL PRODUCTS
@@ -1051,27 +826,16 @@ def product_form(window):
 
     def show_all_products():
 
-        con = None
-        cursor = None
+        # Clear existing rows
+        for item in product_treeview.get_children():
+            product_treeview.delete(item)
+
+        cursor, connection = connect_database()
+
+        if cursor is None:
+            return
 
         try:
-
-            con = connect_database()
-
-            if con is None:
-                return
-
-            cursor = con.cursor()
-
-
-            # Clear Treeview
-
-            for item in treeview.get_children():
-
-                treeview.delete(
-                    item
-                )
-
 
             cursor.execute(
                 """
@@ -1081,6 +845,8 @@ def product_form(window):
                     supplier,
                     name,
                     price,
+                    discount,
+                    discounted_price,
                     quantity,
                     status
                 FROM product_data
@@ -1088,18 +854,15 @@ def product_form(window):
                 """
             )
 
-
             products = cursor.fetchall()
-
 
             for product in products:
 
-                treeview.insert(
+                product_treeview.insert(
                     "",
                     END,
                     values=product
                 )
-
 
         except pymysql.MySQLError as e:
 
@@ -1110,12 +873,8 @@ def product_form(window):
 
         finally:
 
-            if cursor:
-                cursor.close()
-
-            if con:
-                con.close()
-
+            cursor.close()
+            connection.close()
 
     # ========================================================
     # SEARCH PRODUCT
@@ -1123,69 +882,48 @@ def product_form(window):
 
     def search_product():
 
+        search_text = search_entry.get().strip()
+
         search_by = search_combobox.get()
-        search_value = search_entry.get().strip()
 
+        if search_text == "":
 
-        if not search_value:
-
-            messagebox.showerror(
-                "Error",
-                "Please enter search value"
-            )
-
+            show_all_products()
             return
 
+        # ----------------------------------------------------
+        # SEARCH COLUMN
+        # ----------------------------------------------------
 
         column_map = {
-
+            "ID": "id",
             "Category": "category",
-
             "Supplier": "supplier",
-
             "Name": "name",
-
             "Status": "status"
-
         }
 
-
-        column = column_map.get(
-            search_by
-        )
-
+        column = column_map.get(search_by)
 
         if column is None:
 
             messagebox.showerror(
                 "Error",
-                "Please select search type"
+                "Invalid search option"
             )
 
             return
 
+        # Clear Treeview
+        for item in product_treeview.get_children():
+            product_treeview.delete(item)
 
-        con = None
-        cursor = None
+        cursor, connection = connect_database()
+
+        if cursor is None:
+            return
 
         try:
-
-            con = connect_database()
-
-            if con is None:
-                return
-
-            cursor = con.cursor()
-
-
-            # Clear Treeview
-
-            for item in treeview.get_children():
-
-                treeview.delete(
-                    item
-                )
-
 
             query = f"""
                 SELECT
@@ -1194,6 +932,8 @@ def product_form(window):
                     supplier,
                     name,
                     price,
+                    discount,
+                    discounted_price,
                     quantity,
                     status
                 FROM product_data
@@ -1201,26 +941,20 @@ def product_form(window):
                 ORDER BY id DESC
             """
 
-
             cursor.execute(
                 query,
-                (
-                    f"%{search_value}%",
-                )
+                (f"%{search_text}%",)
             )
-
 
             products = cursor.fetchall()
 
-
             for product in products:
 
-                treeview.insert(
+                product_treeview.insert(
                     "",
                     END,
                     values=product
                 )
-
 
             if not products:
 
@@ -1229,35 +963,148 @@ def product_form(window):
                     "No product found"
                 )
 
-
         except pymysql.MySQLError as e:
 
             messagebox.showerror(
                 "Database Error",
-                f"Unable to search product:\n{e}"
+                f"Search failed:\n{e}"
             )
 
         finally:
 
-            if cursor:
-                cursor.close()
-
-            if con:
-                con.close()
-
+            cursor.close()
+            connection.close()
 
     # ========================================================
-    # BUTTONS
+    # SEARCH AREA
     # ========================================================
+
+    search_frame = Frame(
+        product_frame,
+        bg="white"
+    )
+
+    search_frame.place(
+        x=500,
+        y=50,
+        width=800,
+        height=90
+    )
+
+    search_label = Label(
+        search_frame,
+        text="Search By",
+        font=("times new roman", 14, "bold"),
+        bg="white"
+    )
+
+    search_label.grid(
+        row=0,
+        column=0,
+        padx=5,
+        pady=5
+    )
+
+    search_combobox = ttk.Combobox(
+        search_frame,
+        values=(
+            "ID",
+            "Category",
+            "Supplier",
+            "Name",
+            "Status"
+        ),
+        font=("times new roman", 13),
+        state="readonly",
+        width=12
+    )
+
+    search_combobox.grid(
+        row=0,
+        column=1,
+        padx=5
+    )
+
+    search_combobox.set("Name")
+
+    search_entry = Entry(
+        search_frame,
+        font=("times new roman", 13),
+        bg="lightyellow"
+    )
+
+    search_entry.grid(
+        row=0,
+        column=2,
+        padx=5,
+        ipadx=30,
+        ipady=3
+    )
+
+    search_button = Button(
+        search_frame,
+        text="Search",
+        font=("times new roman", 12, "bold"),
+        bg="#0f4d7d",
+        fg="white",
+        cursor="hand2",
+        command=search_product
+    )
+
+    search_button.grid(
+        row=0,
+        column=3,
+        padx=5
+    )
+
+    show_all_button = Button(
+        search_frame,
+        text="Show All",
+        font=("times new roman", 12, "bold"),
+        bg="#0f4d7d",
+        fg="white",
+        cursor="hand2",
+        command=show_all_products
+    )
+
+    show_all_button.grid(
+        row=0,
+        column=4,
+        padx=5
+    )
+
+    # ========================================================
+    # BUTTON FRAME
+    # ========================================================
+    back_button = Button(
+        product_frame,
+        text="Back",
+        width=10,
+        # height=3,
+        cursor="hand2",
+        bg="white",
+        command=lambda: product_frame.place_forget()
+    )
+    back_button.place(x=10, y=30)
+
+    button_frame = Frame(
+        product_frame,
+        bg="white"
+    )
+
+    button_frame.place(
+        x=20,
+        y=410
+    )
 
     add_button = Button(
         button_frame,
         text="Add",
-        font=("times new roman", 14),
+        font=("times new roman", 12, "bold"),
+        bg="#0f4d7d",
+        fg="white",
         width=10,
         cursor="hand2",
-        bg="#0f4d74",
-        fg="white",
         command=add_product
     )
 
@@ -1267,15 +1114,14 @@ def product_form(window):
         padx=5
     )
 
-
     update_button = Button(
         button_frame,
         text="Update",
-        font=("times new roman", 14),
+        font=("times new roman", 12, "bold"),
+        bg="#0f4d7d",
+        fg="white",
         width=10,
         cursor="hand2",
-        bg="#0f4d74",
-        fg="white",
         command=update_product
     )
 
@@ -1285,15 +1131,14 @@ def product_form(window):
         padx=5
     )
 
-
     delete_button = Button(
         button_frame,
         text="Delete",
-        font=("times new roman", 14),
+        font=("times new roman", 12, "bold"),
+        bg="#0f4d7d",
+        fg="white",
         width=10,
         cursor="hand2",
-        bg="#0f4d74",
-        fg="white",
         command=delete_product
     )
 
@@ -1303,15 +1148,14 @@ def product_form(window):
         padx=5
     )
 
-
     clear_button = Button(
         button_frame,
         text="Clear",
-        font=("times new roman", 14),
+        font=("times new roman", 12, "bold"),
+        bg="#0f4d7d",
+        fg="white",
         width=10,
         cursor="hand2",
-        bg="#0f4d74",
-        fg="white",
         command=clear_fields
     )
 
@@ -1321,275 +1165,205 @@ def product_form(window):
         padx=5
     )
 
-
-    # ========================================================
-    # SEARCH FRAME
-    # ========================================================
-
-    search_frame = Frame(
-        product_frame,
-        bg="white"
-    )
-
-    search_frame.place(
-        x=480,
-        y=70
-    )
-
-
-    search_combobox = ttk.Combobox(
-        search_frame,
-        values=(
-            "Category",
-            "Supplier",
-            "Name",
-            "Status"
-        ),
-        font=("times new roman", 14),
-        width=12,
-        state="readonly"
-    )
-
-    search_combobox.grid(
-        row=0,
-        column=0,
-        padx=5
-    )
-
-    search_combobox.set(
-        "Search By"
-    )
-
-
-    search_entry = Entry(
-        search_frame,
-        font=("times new roman", 14),
-        width=18
-    )
-
-    search_entry.grid(
-        row=0,
-        column=1,
-        padx=5
-    )
-
-
-    search_button = Button(
-        search_frame,
-        text="Search",
-        font=("times new roman", 14),
-        width=10,
-        cursor="hand2",
-        bg="#0f4d74",
-        fg="white",
-        command=search_product
-    )
-
-    search_button.grid(
-        row=0,
-        column=2,
-        padx=5
-    )
-
-
-    show_button = Button(
-        search_frame,
-        text="Show All",
-        font=("times new roman", 14),
-        width=10,
-        cursor="hand2",
-        bg="#0f4d74",
-        fg="white",
-        command=show_all_products
-    )
-
-    show_button.grid(
-        row=0,
-        column=3,
-        padx=5
-    )
-
-
     # ========================================================
     # TREEVIEW FRAME
     # ========================================================
 
-    treeview_frame = Frame(
+    tree_frame = Frame(
         product_frame,
         bg="white"
     )
 
-    treeview_frame.place(
-        x=480,
-        y=125,
-        width=750,
-        height=550
+    tree_frame.place(
+        x=20,
+        y=470,
+        width=1280,
+        height=200
     )
 
+    # --------------------------------------------------------
+    # SCROLLBAR
+    # --------------------------------------------------------
 
-    # ========================================================
-    # SCROLLBARS
-    # ========================================================
-
-    scrolly = Scrollbar(
-        treeview_frame,
+    tree_scrollbar = Scrollbar(
+        tree_frame,
         orient=VERTICAL
     )
 
-    scrollx = Scrollbar(
-        treeview_frame,
+    tree_scrollbar.pack(
+        side=RIGHT,
+        fill=Y
+    )
+
+    horizontal_scrollbar = Scrollbar(
+        tree_frame,
         orient=HORIZONTAL
     )
 
+    horizontal_scrollbar.pack(
+        side=BOTTOM,
+        fill=X
+    )
 
     # ========================================================
     # TREEVIEW
     # ========================================================
 
-    treeview = ttk.Treeview(
-        treeview_frame,
+    product_treeview = ttk.Treeview(
+        tree_frame,
         columns=(
             "id",
             "category",
             "supplier",
             "name",
             "price",
+            "discount",
+            "discounted_price",
             "quantity",
             "status"
         ),
         show="headings",
-        yscrollcommand=scrolly.set,
-        xscrollcommand=scrollx.set
+        yscrollcommand=tree_scrollbar.set,
+        xscrollcommand=horizontal_scrollbar.set
     )
 
-
-    scrolly.pack(
-        side=RIGHT,
-        fill=Y
-    )
-
-    scrollx.pack(
-        side=BOTTOM,
-        fill=X
-    )
-
-
-    scrolly.config(
-        command=treeview.yview
-    )
-
-    scrollx.config(
-        command=treeview.xview
-    )
-
-
-    treeview.pack(
+    product_treeview.pack(
         fill=BOTH,
         expand=True
     )
 
+    tree_scrollbar.config(
+        command=product_treeview.yview
+    )
+
+    horizontal_scrollbar.config(
+        command=product_treeview.xview
+    )
 
     # ========================================================
     # TREEVIEW HEADINGS
     # ========================================================
 
-    treeview.heading(
+    product_treeview.heading(
         "id",
         text="ID"
     )
 
-    treeview.heading(
+    product_treeview.heading(
         "category",
         text="Category"
     )
 
-    treeview.heading(
+    product_treeview.heading(
         "supplier",
         text="Supplier"
     )
 
-    treeview.heading(
+    product_treeview.heading(
         "name",
-        text="Name"
+        text="Product Name"
     )
 
-    treeview.heading(
+    product_treeview.heading(
         "price",
         text="Price"
     )
 
-    treeview.heading(
+    product_treeview.heading(
+        "discount",
+        text="Discount (%)"
+    )
+
+    product_treeview.heading(
+        "discounted_price",
+        text="Discounted Amount"
+    )
+
+    product_treeview.heading(
         "quantity",
         text="Quantity"
     )
 
-    treeview.heading(
+    product_treeview.heading(
         "status",
         text="Status"
     )
-
 
     # ========================================================
     # TREEVIEW COLUMNS
     # ========================================================
 
-    treeview.column(
+    product_treeview.column(
         "id",
         width=50,
         anchor="center"
     )
 
-    treeview.column(
+    product_treeview.column(
         "category",
         width=130,
         anchor="center"
     )
 
-    treeview.column(
+    product_treeview.column(
         "supplier",
         width=130,
         anchor="center"
     )
 
-    treeview.column(
+    product_treeview.column(
         "name",
         width=150,
         anchor="center"
     )
 
-    treeview.column(
+    product_treeview.column(
         "price",
         width=100,
         anchor="center"
     )
 
-    treeview.column(
+    product_treeview.column(
+        "discount",
+        width=100,
+        anchor="center"
+    )
+
+    product_treeview.column(
+        "discounted_price",
+        width=130,
+        anchor="center"
+    )
+
+    product_treeview.column(
         "quantity",
         width=100,
         anchor="center"
     )
 
-    treeview.column(
+    product_treeview.column(
         "status",
         width=100,
         anchor="center"
     )
 
-
     # ========================================================
     # TREEVIEW SELECT EVENT
     # ========================================================
 
-    treeview.bind(
+    product_treeview.bind(
         "<ButtonRelease-1>",
         select_product
     )
 
+    # ========================================================
+    # INITIAL DATABASE SETUP
+    # ========================================================
 
-    # ========================================================
-    # LOAD DATA WHEN FORM OPENS
-    # ========================================================
+    create_product_table()
 
     load_categories()
+
     load_suppliers()
+
     show_all_products()
