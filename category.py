@@ -399,7 +399,7 @@ def category_form(window):
         bg="white",
         command=lambda: category_frame.place_forget()
     )
-    back_button.place(x=10, y=5)
+    back_button.place(x=10, y=50)
 
     details_frame = Frame(
         category_frame,

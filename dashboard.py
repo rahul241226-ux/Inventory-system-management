@@ -1,10 +1,12 @@
 from tkinter import *
 
-
+from datetime import datetime
 from PIL import Image, ImageTk
 from employees import employee_form
 from suppliers import supplier_form
 from category import category_form
+from products import product_form
+
 #Functionality part
 
 
@@ -49,8 +51,30 @@ logoutButton.place(x=1350,y=10)
 
 
 #label
-subtitlelabel= Label(window,text='Welcome Admin\t\t Date:09-03-2026\t\t Timme:11:53:45 am',font=('times new roman ',12),bg='#4d636d',fg='white')
-subtitlelabel.place(x=0,y=70,relwidth=1)
+subtitlelabel = Label(
+    window,
+    font=('times new roman', 12),
+    bg='#4d636d',
+    fg='white'
+)
+subtitlelabel.place(x=0, y=70, relwidth=1)
+
+
+def update_datetime():
+    now = datetime.now()
+
+    current_date = now.strftime("%d-%m-%Y")
+    current_time = now.strftime("%I:%M:%S %p")
+
+    subtitlelabel.config(
+        text=f"Welcome Admin\t\t Date: {current_date}\t\t Time: {current_time}"
+    )
+
+    # Run this function again after 1000 milliseconds (1 second)
+    subtitlelabel.after(1000, update_datetime)
+
+
+update_datetime()
 
 
 #left-side bar (frame,logo,image,button)
@@ -128,7 +152,8 @@ product_button = Button(
     text=' Product',
     font=('times new roman', 20, 'bold'),
     anchor='w',
-padx=10
+padx=10,
+command=lambda:product_form(window)
 )
 product_button.pack(fill=X)
 
