@@ -44,17 +44,14 @@ def create_database_table():
 
     try:
 
-        # Create database
         cursor.execute(
             "CREATE DATABASE IF NOT EXISTS inventory_system"
         )
 
-        # Select database
         cursor.execute(
             "USE inventory_system"
         )
 
-        # Create supplier table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS supplier_data
             (
@@ -113,12 +110,10 @@ def treeview_data():
 
         records = cursor.fetchall()
 
-        # Remove old Treeview data
         treeview.delete(
             *treeview.get_children()
         )
 
-        # Insert new data
         for record in records:
 
             treeview.insert(
@@ -159,7 +154,6 @@ def select_data(event):
     if not data:
         return
 
-    # Clear old values
     invoice_entry.delete(
         0,
         END
@@ -180,7 +174,6 @@ def select_data(event):
         END
     )
 
-    # Insert selected values
     invoice_entry.insert(
         0,
         data[0]
@@ -211,14 +204,11 @@ def add_supplier():
     invoice_no = invoice_entry.get().strip()
     supplier_name = supplier_name_entry.get().strip()
     contact = contact_entry.get().strip()
+
     description = description_text.get(
         "1.0",
         END
     ).strip()
-
-    # ========================================================
-    # VALIDATION
-    # ========================================================
 
     if invoice_no == "":
 
@@ -264,10 +254,6 @@ def add_supplier():
 
         return
 
-    # ========================================================
-    # CONVERT INVOICE TO INTEGER
-    # ========================================================
-
     try:
 
         invoice_no = int(invoice_no)
@@ -283,10 +269,6 @@ def add_supplier():
 
         return
 
-    # ========================================================
-    # DATABASE
-    # ========================================================
-
     cursor, connection = connect_database()
 
     if cursor is None or connection is None:
@@ -298,7 +280,6 @@ def add_supplier():
             "USE inventory_system"
         )
 
-        # Check duplicate invoice
         cursor.execute(
             """
             SELECT invoice_no
@@ -317,7 +298,6 @@ def add_supplier():
 
             return
 
-        # Insert supplier
         cursor.execute(
             """
             INSERT INTO supplier_data
@@ -384,14 +364,11 @@ def update_supplier():
     invoice_no = invoice_entry.get().strip()
     supplier_name = supplier_name_entry.get().strip()
     contact = contact_entry.get().strip()
+
     description = description_text.get(
         "1.0",
         END
     ).strip()
-
-    # ========================================================
-    # VALIDATION
-    # ========================================================
 
     if invoice_no == "":
 
@@ -442,10 +419,6 @@ def update_supplier():
 
         return
 
-    # ========================================================
-    # DATABASE
-    # ========================================================
-
     cursor, connection = connect_database()
 
     if cursor is None or connection is None:
@@ -457,7 +430,6 @@ def update_supplier():
             "USE inventory_system"
         )
 
-        # Check whether supplier exists
         cursor.execute(
             """
             SELECT invoice_no
@@ -476,7 +448,6 @@ def update_supplier():
 
             return
 
-        # Update supplier
         cursor.execute(
             """
             UPDATE supplier_data
@@ -661,12 +632,10 @@ def search_supplier():
 
         records = cursor.fetchall()
 
-        # Clear Treeview
         treeview.delete(
             *treeview.get_children()
         )
 
-        # Insert result
         for record in records:
 
             treeview.insert(
@@ -710,7 +679,7 @@ def show_all():
 
 
 # ============================================================
-# CLEAR
+# CLEAR FIELDS
 # ============================================================
 
 def clear_fields():
@@ -740,7 +709,6 @@ def clear_fields():
         END
     )
 
-    # Clear Treeview selection
     treeview.selection_remove(
         treeview.selection()
     )
@@ -774,14 +742,214 @@ def supplier_form(window):
 
     supplier_frame = Frame(
         window,
-        width=1330,
-        height=690,
         bg="white"
     )
 
     supplier_frame.place(
         x=200,
-        y=100
+        y=100,
+        relwidth=1,
+        relheight=1
+    )
+
+    # ========================================================
+    # CANVAS
+    # ========================================================
+
+    supplier_canvas = Canvas(
+        supplier_frame,
+        bg="white",
+        highlightthickness=0
+    )
+
+    supplier_canvas.pack(
+        side=LEFT,
+        fill=BOTH,
+        expand=True
+    )
+
+    # ========================================================
+    # VERTICAL SCROLLBAR
+    # ========================================================
+
+    supplier_scroll_y = Scrollbar(
+        supplier_frame,
+        orient=VERTICAL,
+        command=supplier_canvas.yview
+    )
+
+    supplier_scroll_y.pack(
+        side=RIGHT,
+        fill=Y
+    )
+
+    # ========================================================
+    # HORIZONTAL SCROLLBAR
+    # ========================================================
+
+    supplier_scroll_x = Scrollbar(
+        supplier_frame,
+        orient=HORIZONTAL,
+        command=supplier_canvas.xview
+    )
+
+    supplier_scroll_x.pack(
+        side=BOTTOM,
+        fill=X
+    )
+
+    # ========================================================
+    # CONNECT SCROLLBARS
+    # ========================================================
+
+    supplier_canvas.configure(
+        yscrollcommand=supplier_scroll_y.set,
+        xscrollcommand=supplier_scroll_x.set
+    )
+
+    # ========================================================
+    # SCROLLABLE CONTENT FRAME
+    # ========================================================
+
+    supplier_content = Frame(
+        supplier_canvas,
+        bg="white",
+        width=1330,
+        height=850
+    )
+
+    supplier_canvas.create_window(
+        (0, 0),
+        window=supplier_content,
+        anchor="nw"
+    )
+
+    # ========================================================
+    # UPDATE SCROLL REGION
+    # ========================================================
+
+    def update_scroll_region(event=None):
+
+        supplier_canvas.configure(
+            scrollregion=supplier_canvas.bbox("all")
+        )
+
+    supplier_content.bind(
+        "<Configure>",
+        update_scroll_region
+    )
+
+    # ========================================================
+    # MOUSE WHEEL
+    # ========================================================
+
+    def mouse_wheel(event):
+
+        supplier_canvas.yview_scroll(
+            int(-1 * (event.delta / 120)),
+            "units"
+        )
+
+    supplier_canvas.bind(
+        "<MouseWheel>",
+        mouse_wheel
+    )
+
+    # ========================================================
+    # MOUSE WHEEL WHEN MOUSE IS OVER CONTENT
+    # ========================================================
+
+    def bind_mouse_wheel(event):
+
+        supplier_canvas.bind_all(
+            "<MouseWheel>",
+            mouse_wheel
+        )
+
+    def unbind_mouse_wheel(event):
+
+        supplier_canvas.unbind_all(
+            "<MouseWheel>"
+        )
+
+    supplier_canvas.bind(
+        "<Enter>",
+        bind_mouse_wheel
+    )
+
+    supplier_canvas.bind(
+        "<Leave>",
+        unbind_mouse_wheel
+    )
+
+    # ========================================================
+    # SHIFT + MOUSE WHEEL = HORIZONTAL SCROLL
+    # ========================================================
+
+    def horizontal_mouse_wheel(event):
+
+        supplier_canvas.xview_scroll(
+            int(-1 * (event.delta / 120)),
+            "units"
+        )
+
+    supplier_canvas.bind(
+        "<Shift-MouseWheel>",
+        horizontal_mouse_wheel
+    )
+
+    # ========================================================
+    # KEYBOARD ARROW SCROLLING
+    # ========================================================
+
+    def keyboard_scroll(event):
+
+        if event.keysym == "Left":
+
+            supplier_canvas.xview_scroll(
+                -1,
+                "units"
+            )
+
+        elif event.keysym == "Right":
+
+            supplier_canvas.xview_scroll(
+                1,
+                "units"
+            )
+
+        elif event.keysym == "Up":
+
+            supplier_canvas.yview_scroll(
+                -1,
+                "units"
+            )
+
+        elif event.keysym == "Down":
+
+            supplier_canvas.yview_scroll(
+                1,
+                "units"
+            )
+
+    supplier_canvas.bind(
+        "<Left>",
+        keyboard_scroll
+    )
+
+    supplier_canvas.bind(
+        "<Right>",
+        keyboard_scroll
+    )
+
+    supplier_canvas.bind(
+        "<Up>",
+        keyboard_scroll
+    )
+
+    supplier_canvas.bind(
+        "<Down>",
+        keyboard_scroll
     )
 
     # ========================================================
@@ -789,7 +957,7 @@ def supplier_form(window):
     # ========================================================
 
     heading_label = Label(
-        supplier_frame,
+        supplier_content,
         text="Manage Supplier Details",
         font=("times new roman", 16, "bold"),
         bg="#0f4d7d",
@@ -799,7 +967,7 @@ def supplier_form(window):
     heading_label.place(
         x=0,
         y=0,
-        relwidth=1,
+        width=1330,
         height=40
     )
 
@@ -808,16 +976,28 @@ def supplier_form(window):
     # ========================================================
 
     topFrame = Frame(
-        supplier_frame,
+        supplier_content,
         bg="white"
     )
 
     topFrame.place(
         x=0,
         y=50,
-        relwidth=1,
+        width=1330,
         height=245
     )
+
+    # ========================================================
+    # CLOSE / BACK
+    # ========================================================
+
+    def close_supplier():
+
+        supplier_canvas.unbind_all(
+            "<MouseWheel>"
+        )
+
+        supplier_frame.place_forget()
 
     # ========================================================
     # BACK BUTTON
@@ -829,7 +1009,7 @@ def supplier_form(window):
         width=10,
         cursor="hand2",
         bg="white",
-        command=lambda: supplier_frame.place_forget()
+        command=close_supplier
     )
 
     back_button.place(
@@ -842,7 +1022,7 @@ def supplier_form(window):
     # ========================================================
 
     left_frame = Frame(
-        supplier_frame,
+        supplier_content,
         bg="white"
     )
 
@@ -1078,7 +1258,7 @@ def supplier_form(window):
     # ========================================================
 
     right_frame = Frame(
-        supplier_frame,
+        supplier_content,
         bg="white"
     )
 
@@ -1178,7 +1358,7 @@ def supplier_form(window):
     )
 
     # ========================================================
-    # SCROLLBARS
+    # TREEVIEW SCROLLBARS
     # ========================================================
 
     scrolly = Scrollbar(
@@ -1210,7 +1390,7 @@ def supplier_form(window):
     )
 
     # ========================================================
-    # SCROLLBAR CONFIG
+    # TREEVIEW SCROLLBAR CONFIGURATION
     # ========================================================
 
     scrolly.config(
@@ -1311,3 +1491,13 @@ def supplier_form(window):
     # ========================================================
 
     treeview_data()
+
+    # ========================================================
+    # FORCE INITIAL SCROLL REGION UPDATE
+    # ========================================================
+
+    supplier_canvas.update_idletasks()
+
+    supplier_canvas.configure(
+        scrollregion=supplier_canvas.bbox("all")
+    )

@@ -468,6 +468,7 @@ def category_form(window):
         row=2,
         column=0,
         padx=20,
+        pady=20,
         sticky="nw"
     )
 
