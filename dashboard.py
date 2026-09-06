@@ -9,6 +9,10 @@ from suppliers import supplier_form
 from category import category_form
 from products import product_form
 from employees import connect_database
+from view_bill import view_bill
+# from dashboard import open_dashboard
+
+# from login import login
 
 from tkinter import ttk, messagebox
 
@@ -22,6 +26,16 @@ from tkinter import ttk, messagebox
 # TAX WINDOW
 # ============================================================
 
+def open_dashboard():
+    global window
+
+    window = Tk()
+    window.title("Dashboard")
+    window.geometry("1530x880+0+0")
+
+    # all your dashboard code here
+
+    window.mainloop()
 
 
 def exit_app():
@@ -631,7 +645,7 @@ sales_button = Button(
     text=" Sales",
     font=("times new roman", 20, "bold"),
     anchor="w",
-    padx=10
+    padx=10, command=lambda: view_bill(window)
 )
 
 sales_button.pack(
